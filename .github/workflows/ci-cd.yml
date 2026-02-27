@@ -10,40 +10,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
+      # 1️⃣ Checkout source code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Docker builder
+      # 2️⃣ Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # 3️⃣ Log in to GitHub Container Registry
-      - name: Login to GHCR
+      # 3️⃣ Log in to GHCR
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: priyankakanna
           password: ${{ secrets.GHCR_PAT }}
 
-      # 4️⃣ Build and tag Docker image
+      # 4️⃣ Build Docker image with commit SHA tag
       - name: Build Docker image
         run: |
           SHA=$(echo $GITHUB_SHA | cut -c1-7)
           docker build -t ghcr.io/priyankakanna/python-gitops-app:$SHA .
 
-      # 5️⃣ Push image to GHCR
+      # 5️⃣ Push Docker image to GHCR
       - name: Push Docker image
         run: |
           SHA=$(echo $GITHUB_SHA | cut -c1-7)
           docker push ghcr.io/priyankakanna/python-gitops-app:$SHA
 
-      # 6️⃣ Set up kind cluster
-      - name: Set up kind cluster
-        uses: helm/kind-action@v1.2.1
+      # 6️⃣ Set up a kind cluster
+      - name: Setup kind
+        uses: mirromutth/setup-kind@v1
         with:
           kind-version: "v0.20.0"
-          cluster-name: "ci-cd-cluster"
 
       # 7️⃣ Set up kubectl
       - name: Set up kubectl
@@ -55,8 +54,8 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v3
 
-      # 9️⃣ Deploy via Helm
-      - name: Deploy Helm chart
+      # 9️⃣ Deploy with Helm
+      - name: Deploy Helm Chart
         run: |
           SHA=$(echo $GITHUB_SHA | cut -c1-7)
           helm upgrade --install python-gitops-app ./python-gitops-app \
@@ -64,9 +63,9 @@ jobs:
             --set image.tag=$SHA \
             --wait
 
-      # 🔟 Verify deployment
-      - name: Get pods
+      # 🔟 Verification
+      - name: Show Pods
         run: kubectl get pods -o wide
 
-      - name: Get services
+      - name: Show Services
         run: kubectl get svc
