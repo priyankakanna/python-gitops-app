@@ -10,55 +10,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
-      - name: Checkout repository
+      # 1️⃣ Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Docker Buildx
+      # 2️⃣ Set up Docker builder
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # 3️⃣ Log in to GHCR
-      - name: Log in to GitHub Container Registry
+      # 3️⃣ Log in to GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: priyankakanna
           password: ${{ secrets.GHCR_PAT }}
 
-      # 4️⃣ Build Docker image with SHA tag
+      # 4️⃣ Build and tag Docker image
       - name: Build Docker image
         run: |
           SHA=$(echo $GITHUB_SHA | cut -c1-7)
           docker build -t ghcr.io/priyankakanna/python-gitops-app:$SHA .
 
-      # 5️⃣ Push Docker image to GHCR
+      # 5️⃣ Push image to GHCR
       - name: Push Docker image
         run: |
           SHA=$(echo $GITHUB_SHA | cut -c1-7)
           docker push ghcr.io/priyankakanna/python-gitops-app:$SHA
 
-      # 6️⃣ Set up kind (Kubernetes in Docker)
-      - name: Set up kind
+      # 6️⃣ Set up kind cluster
+      - name: Set up kind cluster
         uses: helm/kind-action@v1.2.1
         with:
-          version: v0.20.0
+          kind-version: "v0.20.0"
+          cluster-name: "ci-cd-cluster"
 
-      # 7️⃣ Create kind cluster
-      - name: Create kind cluster
-        run: |
-          kind create cluster --name ci-cd-cluster
-
-      # 8️⃣ Set up kubectl context
+      # 7️⃣ Set up kubectl
       - name: Set up kubectl
-        run: |
-          kubectl cluster-info --context kind-ci-cd-cluster
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "latest"
 
-      # 9️⃣ Set up Helm
+      # 8️⃣ Set up Helm
       - name: Set up Helm
         uses: azure/setup-helm@v3
 
-      # 🔟 Deploy Helm chart to kind
+      # 9️⃣ Deploy via Helm
       - name: Deploy Helm chart
         run: |
           SHA=$(echo $GITHUB_SHA | cut -c1-7)
@@ -67,9 +64,9 @@ jobs:
             --set image.tag=$SHA \
             --wait
 
-      # 1️⃣1️⃣ Verify deployment
-      - name: Check pods
+      # 🔟 Verify deployment
+      - name: Get pods
         run: kubectl get pods -o wide
 
-      - name: Check services
+      - name: Get services
         run: kubectl get svc
