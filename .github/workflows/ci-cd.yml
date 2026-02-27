@@ -10,15 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
-      - name: Checkout repository
+      # 1️⃣ Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
       # 2️⃣ Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # 3️⃣ Log in to GHCR
+      # 3️⃣ Log in to GitHub Container Registry (GHCR)
       - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
@@ -26,20 +26,26 @@ jobs:
           username: priyankakanna
           password: ${{ secrets.GHCR_PAT }}
 
-      # 4️⃣ Build Docker image with commit SHA
+      # 4️⃣ Build Docker image with commit SHA tag
       - name: Build Docker image
         run: |
-          SHA=$(echo $GITHUB_SHA | cut -c1-7 | tr -d '\n')
+          # Short commit SHA (7 characters) for tagging
+          SHA=$(echo "${GITHUB_SHA}" | cut -c1-7 | tr -d '\n')
+          echo "SHA=$SHA"
+          
+          # Build Docker image
           docker build -t ghcr.io/priyankakanna/python-gitops-app:$SHA .
 
-      # 5️⃣ Push Docker image to GHCR
-      - name: Push Docker image
+      # 5️⃣ Push Docker image with SHA tag
+      - name: Push Docker image with SHA tag
         run: |
-          SHA=$(echo $GITHUB_SHA | cut -c1-7 | tr -d '\n')
+          SHA=$(echo "${GITHUB_SHA}" | cut -c1-7 | tr -d '\n')
+          echo "Pushing image with tag: $SHA"
           docker push ghcr.io/priyankakanna/python-gitops-app:$SHA
 
-      # 6️⃣ (Optional) Push v1 tag
-      - name: Tag and push v1
+      # 6️⃣ Tag image as v1 and push
+      - name: Tag Docker image as v1
         run: |
+          SHA=$(echo "${GITHUB_SHA}" | cut -c1-7 | tr -d '\n')
           docker tag ghcr.io/priyankakanna/python-gitops-app:$SHA ghcr.io/priyankakanna/python-gitops-app:v1
           docker push ghcr.io/priyankakanna/python-gitops-app:v1
