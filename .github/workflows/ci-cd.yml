@@ -14,13 +14,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Log in to GitHub Container Registry
+      # 2️⃣ Log in to GHCR using Personal Access Token (PAT)
       - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: priyankakanna   # your GitHub username
+          password: ${{ secrets.GHCR_PAT }}  # PAT with write:packages + read:packages + repo scopes
 
       # 3️⃣ Build Docker image
       - name: Build Docker image
@@ -33,7 +33,7 @@ jobs:
           SHA=$(echo $GITHUB_SHA | cut -c1-7)
           docker tag ghcr.io/priyankakanna/python-gitops-app:v1 ghcr.io/priyankakanna/python-gitops-app:$SHA
 
-      # 5️⃣ Push Docker image
+      # 5️⃣ Push Docker image to GHCR
       - name: Push Docker image
         run: |
           docker push ghcr.io/priyankakanna/python-gitops-app:v1
