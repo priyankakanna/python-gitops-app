@@ -1,0 +1,40 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2️⃣ Log in to GitHub Container Registry
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3️⃣ Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/python-gitops-app:v1 .
+
+      # 4️⃣ Tag image with commit SHA
+      - name: Tag Docker image with SHA
+        run: |
+          SHA=$(echo $GITHUB_SHA | cut -c1-7)
+          docker tag ghcr.io/${{ github.repository }}/python-gitops-app:v1 ghcr.io/${{  github.repository }}/python-gitops-app:$SHA
+
+      # 5️⃣ Push both tags to GHCR
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/${{ github.repository }}/python-gitops-app:v1
+          docker push ghcr.io/${{ github.repository }}/python-gitops-app:$SHA
