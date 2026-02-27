@@ -6,12 +6,12 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout source code
-      - name: Checkout code
+      # 1️⃣ Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       # 2️⃣ Set up Docker Buildx
@@ -19,53 +19,27 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       # 3️⃣ Log in to GHCR
-      - name: Login to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: priyankakanna
           password: ${{ secrets.GHCR_PAT }}
 
-      # 4️⃣ Build Docker image with commit SHA tag
+      # 4️⃣ Build Docker image with commit SHA
       - name: Build Docker image
         run: |
-          SHA=$(echo $GITHUB_SHA | cut -c1-7)
+          SHA=$(echo $GITHUB_SHA | cut -c1-7 | tr -d '\n')
           docker build -t ghcr.io/priyankakanna/python-gitops-app:$SHA .
 
       # 5️⃣ Push Docker image to GHCR
       - name: Push Docker image
         run: |
-          SHA=$(echo $GITHUB_SHA | cut -c1-7)
+          SHA=$(echo $GITHUB_SHA | cut -c1-7 | tr -d '\n')
           docker push ghcr.io/priyankakanna/python-gitops-app:$SHA
 
-      # 6️⃣ Set up a kind cluster
-      - name: Setup kind
-        uses: mirromutth/setup-kind@v1
-        with:
-          kind-version: "v0.20.0"
-
-      # 7️⃣ Set up kubectl
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: "latest"
-
-      # 8️⃣ Set up Helm
-      - name: Set up Helm
-        uses: azure/setup-helm@v3
-
-      # 9️⃣ Deploy with Helm
-      - name: Deploy Helm Chart
+      # 6️⃣ (Optional) Push v1 tag
+      - name: Tag and push v1
         run: |
-          SHA=$(echo $GITHUB_SHA | cut -c1-7)
-          helm upgrade --install python-gitops-app ./python-gitops-app \
-            --set image.repository=ghcr.io/priyankakanna/python-gitops-app \
-            --set image.tag=$SHA \
-            --wait
-
-      # 🔟 Verification
-      - name: Show Pods
-        run: kubectl get pods -o wide
-
-      - name: Show Services
-        run: kubectl get svc
+          docker tag ghcr.io/priyankakanna/python-gitops-app:$SHA ghcr.io/priyankakanna/python-gitops-app:v1
+          docker push ghcr.io/priyankakanna/python-gitops-app:v1
