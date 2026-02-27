@@ -27,13 +27,13 @@ jobs:
         run: |
           docker build -t ghcr.io/priyankakanna/python-gitops-app:v1 .
 
-      # 4️⃣ Tag Docker image with commit SHA
+      # 4️⃣ Tag Docker image with commit SHA (optional but recommended)
       - name: Tag Docker image with SHA
         run: |
           SHA=$(echo $GITHUB_SHA | cut -c1-7)
           docker tag ghcr.io/priyankakanna/python-gitops-app:v1 ghcr.io/priyankakanna/python-gitops-app:$SHA
 
-      # 5️⃣ Push both tags to GHCR
+      # 5️⃣ Push Docker image
       - name: Push Docker image
         run: |
           docker push ghcr.io/priyankakanna/python-gitops-app:v1
