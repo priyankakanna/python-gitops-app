@@ -10,30 +10,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
+      # Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Log in to GHCR using Personal Access Token (PAT)
+      # Log in to GitHub Container Registry using PAT
       - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: priyankakanna               # your GitHub username
-          password: ${{ secrets.GHCR_PAT }}    # PAT with write:packages + read:packages + repo scopes
+          username: priyankakanna
+          password: ${{ secrets.GHCR_PAT }}
 
-      # 3️⃣ Build Docker image
+      # Build Docker image
       - name: Build Docker image
         run: |
           docker build -t ghcr.io/priyankakanna/python-gitops-app:v1 .
 
-      # 4️⃣ Tag Docker image with safe commit SHA
+      # Tag Docker image with commit SHA (safe)
       - name: Tag Docker image with commit SHA
         run: |
           SHA=$(echo $GITHUB_SHA | cut -c1-7 | tr -d '\n')
+          echo "SHA tag: $SHA"
           docker tag ghcr.io/priyankakanna/python-gitops-app:v1 ghcr.io/priyankakanna/python-gitops-app:$SHA
 
-      # 5️⃣ Push Docker images to GHCR
+      # Push Docker images
       - name: Push Docker images
         run: |
           docker push ghcr.io/priyankakanna/python-gitops-app:v1
